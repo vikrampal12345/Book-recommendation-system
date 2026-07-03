@@ -4,15 +4,20 @@ import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn.feature_extraction.text import CountVectorizer
 
+@st.cache_resource
+def load_files():
+    with open("book.pkl", "rb") as f:
+        book = pickle.load(f)
 
-with open('book.pkl', 'rb') as f:
-    book = pickle.load(f)
+    with open("model.pkl", "rb") as f:
+        model = pickle.load(f)
 
-with open('model.pkl', 'rb') as f:
-    model = pickle.load(f)
+    with open("vector.pkl", "rb") as f:
+        vector = pickle.load(f)
 
-with open('vector.pkl', 'rb') as f:
-    vector = pickle.load(f)
+    return book, model, vector
+
+book, model, vector = load_files()
 
 def recommend(book_ob):
     index1 = book[book['Book-Title'] == book_ob].index[0]
@@ -28,17 +33,28 @@ def recommend(book_ob):
 
     return recommended_books
 
-st.title('Book Recommendation System')
-book_title = st.selectbox('Enter Book Name:',book['Book-Title'])
+st.title("📚 Book Recommendation System")
 
-if st.button("Recommend"):
 
-    recommendation = recommend(book_title)
+with st.form("recommend_form"):
+    book_title = st.selectbox(
+        "Select a Book",
+        sorted(book["Book-Title"].unique()),
+        index=None,
+        placeholder="🔍 Search here..."
+    )
 
-    cols = st.columns(5)
+    submitted = st.form_submit_button("Recommend")
 
-    for col, item in zip(cols, recommendation):
+if submitted:
+    if book_title is None:
+        st.warning("Please select a book first.")
+    else:
+        recommendation = recommend(book_title)
 
-        with col:
-            st.image(item["image"], width=320)
-            st.caption(item["title"])
+        cols = st.columns(5)
+
+        for col, item in zip(cols, recommendation):
+            with col:
+                st.image(item["image"], width=150)
+                st.caption(item["title"])
